@@ -34,6 +34,21 @@ export class ReleasesStorage extends BaseStorage<Release> {
         });
     }
 
+    getByParams(where: string, whereArgs: any[]): Promise<Release[]> {
+        return new Promise((resolve, reject) => {
+            let releases: Release[] = [];
+
+            this.db.serialize(() => {
+                this.db.each(`select * from ${this.tableName} where ${where}`, whereArgs, (err, row) => {
+                    releases.push(row);
+                }, (error) => {
+                    if (error) reject(error);
+                    else resolve(releases);
+                });
+            });
+        });
+    }
+
     insert(release: Release): Promise<number> {
         return new Promise((resolve, reject) => {
             this.db.serialize(() => {

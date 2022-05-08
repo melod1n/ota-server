@@ -1,4 +1,15 @@
-import {Body, Delete, Get, JsonController, Param, Patch, Post, Res, UploadedFile} from 'routing-controllers';
+import {
+    Body,
+    Delete,
+    Get,
+    JsonController,
+    Param,
+    Patch,
+    Post,
+    QueryParam,
+    Res,
+    UploadedFile
+} from 'routing-controllers';
 import 'reflect-metadata';
 import {appDatabase} from '../database/database';
 import {ReleasesStorage} from '../database/storage/releases-storage';
@@ -6,15 +17,15 @@ import {createWriteStream, existsSync, renameSync, unlinkSync} from 'fs';
 import md5File from 'md5-file';
 import {Release, ReleaseAdd, ReleaseEdit} from '../model/releases';
 
-@JsonController('/releases')
+@JsonController()
 export class ReleasesController {
 
     private releasesStorage = new ReleasesStorage(appDatabase);
 
-    @Get('/')
+    @Get('/releases/')
     async getReleases() {
         try {
-            let releases = await this.releasesStorage.getAll();
+            const releases = await this.releasesStorage.getAll();
             return {
                 response: {
                     releases: releases
@@ -25,7 +36,7 @@ export class ReleasesController {
         }
     }
 
-    @Get('/:id')
+    @Get('/releases/:id')
     async getReleaseById(@Param('id') id: number) {
         try {
             const release = await this.releasesStorage.getById(id);
@@ -40,7 +51,37 @@ export class ReleasesController {
         }
     }
 
-    @Get('/:id/download')
+    @Get('/releases-latest')
+    async getLatestRelease(
+        @QueryParam('productId') productId: number,
+        @QueryParam('branchId') branchId: number
+    ) {
+        try {
+            const releases = await this.releasesStorage.getByParams(
+                `productId = (?) and branchId = (?)`,
+                [productId, branchId]
+            );
+            if (releases.length == 0) {
+                return {
+                    response: null
+                };
+            }
+
+            releases.sort((first, second) => {
+                return second.date - first.date;
+            });
+
+            return {
+                response: {
+                    release: releases[0]
+                }
+            };
+        } catch (e) {
+            return e;
+        }
+    }
+
+    @Get('/releases/:id/download')
     async downloadFile(@Param('id') id: number, @Res() res) {
         try {
             const release = await this.releasesStorage.getById(id);
@@ -63,11 +104,24 @@ export class ReleasesController {
         }
     }
 
-    @Post('/')
+    @Post('/releases/')
     async addRelease(@Body() body: ReleaseAdd, @UploadedFile('file') file: any, @Res() res) {
         try {
             const release = body.mapToRelease();
             release.date = new Date().getTime();
+
+            if (file == null) {
+                return {
+                    error: 'File cannot be null'
+                };
+            }
+
+            const path = `files/releases`;
+            let filePath = `${path}/${release.fileName}.${release.extension}`;
+
+            if (existsSync(filePath)) {
+                unlinkSync(filePath);
+            }
 
             const mappedFile = UploadedFileExpress.map(file);
             const lastDotIndex = mappedFile.originalName.lastIndexOf('.');
@@ -81,8 +135,11 @@ export class ReleasesController {
             release.mimeType = mappedFile.mimeType;
             release.encoding = mappedFile.encoding;
 
-            const path = `files/releases`;
-            const filePath = `${path}/${mappedFile.originalName}`;
+            filePath = `${path}/${mappedFile.originalName}`;
+
+            if (existsSync(filePath)) {
+                unlinkSync(filePath);
+            }
 
             createWriteStream(filePath).write(mappedFile.buffer, (error => {
                 if (error) throw error;
@@ -103,7 +160,7 @@ export class ReleasesController {
         }
     }
 
-    @Patch('/:id')
+    @Patch('/releases/:id')
     async editReleaseById(
         @Param('id') id: number,
         @Body() body: ReleaseEdit,
@@ -168,7 +225,7 @@ export class ReleasesController {
         }
     }
 
-    @Delete('/:id')
+    @Delete('/releases/:id')
     async deleteReleaseById(@Param('id') id: number) {
         try {
             const release = await this.releasesStorage.getById(id);
@@ -188,7 +245,7 @@ export class ReleasesController {
         }
     }
 
-    @Delete('/')
+    @Delete('/releases/')
     async clearReleases() {
         try {
             const releases = await this.releasesStorage.getAll();
