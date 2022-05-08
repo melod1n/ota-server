@@ -89,25 +89,6 @@ export class ReleasesStorage extends BaseStorage<Release> {
                         } else resolve(null);
                     }
                 );
-                // const values = this.db.prepare(`update ${this.tableName} set versionName = (?), versionCode = (?), mandatory = (?), changelog = (?), enabled = (?), extension = (?), originalName = (?), fileSize = (?), mimeType = (?), encoding = (?), fileName = (?) where id = (?)`);
-                // values.run(
-                //     release.versionName,
-                //     release.versionCode,
-                //     release.mandatory,
-                //     release.changelog,
-                //     release.enabled,
-                //     release.extension,
-                //     release.originalName,
-                //     release.fileSize,
-                //     release.mimeType,
-                //     release.encoding,
-                //     release.fileName,
-                //     release.id
-                // );
-                // values.finalize(error => {
-                //     if (error) reject(error);
-                //     else resolve(null);
-                // });
             });
         });
     }

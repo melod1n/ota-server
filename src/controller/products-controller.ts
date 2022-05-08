@@ -1,4 +1,4 @@
-import {Body, Delete, Get, JsonController, Param, Post} from 'routing-controllers';
+import {Body, Delete, Get, JsonController, Param, Patch, Post} from 'routing-controllers';
 import 'reflect-metadata';
 import {Product} from '../model/db-models';
 import {ProductsStorage} from '../database/storage/products-storage';
@@ -26,7 +26,26 @@ export class ProductsController {
     @Post('/')
     async addProduct(@Body() product: Product) {
         try {
-            await this.productsStorage.store(product.name);
+            await this.productsStorage.insert(product.name);
+            return {
+                response: 1
+            };
+        } catch (e) {
+            return e;
+        }
+    }
+
+    @Patch('/:id')
+    async updateProduct(@Param('id') id: number, @Body() body: any) {
+        try {
+            const product = await this.productsStorage.getById(id);
+            if (product == null) {
+                return {
+                    error: 'Product not found'
+                };
+            }
+
+            await this.productsStorage.update(id, body.name);
             return {
                 response: 1
             };

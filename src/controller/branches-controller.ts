@@ -1,4 +1,4 @@
-import {Body, Delete, Get, JsonController, Param, Post} from 'routing-controllers';
+import {Body, Delete, Get, JsonController, Param, Patch, Post} from 'routing-controllers';
 import 'reflect-metadata';
 import {Branch} from '../model/db-models';
 import {appDatabase} from '../database/database';
@@ -27,7 +27,26 @@ export class BranchesController extends BaseController {
     @Post('/')
     async addBranch(@Body() branch: Branch) {
         try {
-            await this.branchesStorage.store(branch.productId, branch.name);
+            await this.branchesStorage.insert(branch.productId, branch.name);
+            return {
+                response: 1
+            };
+        } catch (e) {
+            return e;
+        }
+    }
+
+    @Patch('/:id')
+    async updateBranch(@Param('id') id: number, @Body() body: any) {
+        try {
+            const branch = await this.branchesStorage.getById(id);
+            if (branch == null) {
+                return {
+                    error: 'Branch not found'
+                };
+            }
+
+            await this.branchesStorage.update(id, body.name);
             return {
                 response: 1
             };
