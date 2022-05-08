@@ -1,15 +1,15 @@
-import {Body, Delete, Get, JsonController, Param, Post, QueryParam} from 'routing-controllers';
+import {Body, Delete, Get, JsonController, Param, Post} from 'routing-controllers';
 import 'reflect-metadata';
 import {Product} from '../model/db-models';
 import {ProductsStorage} from '../database/storage/products-storage';
 import {appDatabase} from '../database/database';
 
-@JsonController()
+@JsonController('/products')
 export class ProductsController {
 
     private productsStorage = new ProductsStorage(appDatabase);
 
-    @Get('/products')
+    @Get('/')
     async getProducts() {
         try {
             let products = await this.productsStorage.getAll();
@@ -23,7 +23,7 @@ export class ProductsController {
         }
     }
 
-    @Post('/products')
+    @Post('/')
     async addProduct(@Body() product: Product) {
         try {
             await this.productsStorage.store(product.name);
@@ -35,7 +35,7 @@ export class ProductsController {
         }
     }
 
-    @Delete('/products/:name')
+    @Delete('/:name')
     async deleteProduct(@Param('name') name: string) {
         try {
             await this.productsStorage.delete(name);
@@ -47,7 +47,7 @@ export class ProductsController {
         }
     }
 
-    @Delete('/products')
+    @Delete('/')
     async clearProducts() {
         try {
             await this.productsStorage.clear();

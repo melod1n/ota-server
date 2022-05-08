@@ -4,7 +4,6 @@ import {Release} from '../model/db-models';
 import {appDatabase} from '../database/database';
 import {ReleasesStorage} from '../database/storage/releases-storage';
 import {createWriteStream} from 'fs';
-import {baseUrl} from '../index';
 
 @JsonController('/releases')
 export class ReleasesController {
@@ -38,10 +37,6 @@ export class ReleasesController {
         } catch (e) {
             return e;
         }
-    }
-
-    getDownloadLink(fileName: string): string {
-        return `${baseUrl}/files/releases/${fileName}`;
     }
 
     @Get('/:id/download')

@@ -1,16 +1,16 @@
-import {Body, Delete, Get, JsonController, Param, Post, QueryParam} from 'routing-controllers';
+import {Body, Delete, Get, JsonController, Param, Post} from 'routing-controllers';
 import 'reflect-metadata';
 import {Branch} from '../model/db-models';
 import {appDatabase} from '../database/database';
 import {BranchesStorage} from '../database/storage/branches-storage';
 import {BaseController} from './base-controller';
 
-@JsonController()
+@JsonController('/branches')
 export class BranchesController extends BaseController {
 
     private branchesStorage = new BranchesStorage(appDatabase);
 
-    @Get('/branches')
+    @Get('/')
     async getBranches() {
         try {
             let products = await this.branchesStorage.getAll();
@@ -24,7 +24,7 @@ export class BranchesController extends BaseController {
         }
     }
 
-    @Post('/branches')
+    @Post('/')
     async addBranch(@Body() branch: Branch) {
         try {
             await this.branchesStorage.store(branch.productId, branch.name);
@@ -36,7 +36,7 @@ export class BranchesController extends BaseController {
         }
     }
 
-    @Delete('/branches/:id')
+    @Delete('/:id')
     async deleteBranch(@Param('id') id: number) {
         try {
             await this.branchesStorage.delete(id);
@@ -48,7 +48,7 @@ export class BranchesController extends BaseController {
         }
     }
 
-    @Delete('/branches')
+    @Delete('/')
     async clearBranches() {
         try {
             await this.branchesStorage.clear();
