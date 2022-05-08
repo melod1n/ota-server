@@ -15,6 +15,8 @@ setTimeout(() => {
         .then(async urls => {
             const url = urls[0];
             await writeFile('ngrok_url.json', JSON.stringify({url: url}));
+
+            child_process.exec('commit_and_push_ngrok_url');
             console.log(url);
         })
         .catch(console.error);
