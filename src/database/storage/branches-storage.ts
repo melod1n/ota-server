@@ -54,6 +54,4 @@ export class BranchesStorage extends BaseStorage<Branch> {
             });
         });
     }
-
-
 }

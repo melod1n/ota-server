@@ -1,4 +1,4 @@
-import {Body, Delete, Get, JsonController, Post, QueryParam} from 'routing-controllers';
+import {Body, Delete, Get, JsonController, Param, Post, QueryParam} from 'routing-controllers';
 import 'reflect-metadata';
 import {Product} from '../model/db-models';
 import {ProductsStorage} from '../database/storage/products-storage';
@@ -9,7 +9,7 @@ export class ProductsController {
 
     private productsStorage = new ProductsStorage(appDatabase);
 
-    @Get('/products.get')
+    @Get('/products')
     async getProducts() {
         try {
             let products = await this.productsStorage.getAll();
@@ -23,7 +23,7 @@ export class ProductsController {
         }
     }
 
-    @Post('/products.add')
+    @Post('/products')
     async addProduct(@Body() product: Product) {
         try {
             await this.productsStorage.store(product.name);
@@ -35,8 +35,8 @@ export class ProductsController {
         }
     }
 
-    @Delete('/products.delete')
-    async deleteProduct(@QueryParam('name') name: string) {
+    @Delete('/products/:name')
+    async deleteProduct(@Param('name') name: string) {
         try {
             await this.productsStorage.delete(name);
             return {
@@ -47,7 +47,7 @@ export class ProductsController {
         }
     }
 
-    @Delete('/products.clear')
+    @Delete('/products')
     async clearProducts() {
         try {
             await this.productsStorage.clear();
@@ -58,29 +58,4 @@ export class ProductsController {
             return e;
         }
     }
-
-    // @Get('/testing.check')
-    // @ContentType('application/json')
-    // checkUserTesting(@QueryParams() params) {
-    //     const userId = utils.requireNumber('userId', params.userId);
-    //     if (typeof userId !== 'number') return userId;
-    //
-    //     const users = database.getTestUsers();
-    //
-    //     return {inTesting: users.includes(<number>userId)};
-    // }
-    //
-    // @Get('/testing.add')
-    // @ContentType('application/json')
-    // setUserTesting(@QueryParams() params) {
-    //     const userId = utils.requireNumber('userId', params.userId);
-    //     if (typeof userId !== 'number') return userId;
-    //
-    //     if (params.access_token !== process.env.TOKEN) return utils.error(1, 'Wrong token');
-    //
-    //     database.setUserTesting(<number>userId);
-    //
-    //     return {success: 1};
-    // }
-
 }

@@ -17,7 +17,9 @@ class Release {
     branchId: number;
     mandatory: number;
     changelog?: string;
-    downloadLink: string;
+    enabled: number;
+    fileName?: string;
+    date: number;
 }
 
 export {

@@ -1,4 +1,4 @@
-import {Body, Delete, Get, JsonController, Post, QueryParam} from 'routing-controllers';
+import {Body, Delete, Get, JsonController, Param, Post, QueryParam} from 'routing-controllers';
 import 'reflect-metadata';
 import {Branch} from '../model/db-models';
 import {appDatabase} from '../database/database';
@@ -10,8 +10,8 @@ export class BranchesController extends BaseController {
 
     private branchesStorage = new BranchesStorage(appDatabase);
 
-    @Get('/branches.get')
-    async getProducts() {
+    @Get('/branches')
+    async getBranches() {
         try {
             let products = await this.branchesStorage.getAll();
             return {
@@ -24,8 +24,8 @@ export class BranchesController extends BaseController {
         }
     }
 
-    @Post('/branches.add')
-    async addProduct(@Body() branch: Branch) {
+    @Post('/branches')
+    async addBranch(@Body() branch: Branch) {
         try {
             await this.branchesStorage.store(branch.productId, branch.name);
             return {
@@ -36,8 +36,8 @@ export class BranchesController extends BaseController {
         }
     }
 
-    @Delete('/branches.delete')
-    async deleteProduct(@QueryParam('id') id: number) {
+    @Delete('/branches/:id')
+    async deleteBranch(@Param('id') id: number) {
         try {
             await this.branchesStorage.delete(id);
             return {
@@ -48,8 +48,8 @@ export class BranchesController extends BaseController {
         }
     }
 
-    @Delete('/branches.clear')
-    async clearProducts() {
+    @Delete('/branches')
+    async clearBranches() {
         try {
             await this.branchesStorage.clear();
             return {
