@@ -4,7 +4,7 @@ import {appDatabase} from '../database/database';
 import {ReleasesStorage} from '../database/storage/releases-storage';
 import {createWriteStream, existsSync, renameSync, unlinkSync} from 'fs';
 import md5File from 'md5-file';
-import {ReleaseAdd, ReleaseEdit} from '../model/releases';
+import {Release, ReleaseAdd, ReleaseEdit} from '../model/releases';
 
 @JsonController('/releases')
 export class ReleasesController {
@@ -171,6 +171,14 @@ export class ReleasesController {
     @Delete('/:id')
     async deleteReleaseById(@Param('id') id: number) {
         try {
+            const release = await this.releasesStorage.getById(id);
+            if (release == null) {
+                return {
+                    error: 'Release not found'
+                };
+            }
+
+            this.deleteFile(release);
             await this.releasesStorage.delete(id);
             return {
                 response: 1
@@ -183,12 +191,26 @@ export class ReleasesController {
     @Delete('/')
     async clearReleases() {
         try {
+            const releases = await this.releasesStorage.getAll();
+            for (const release of releases) {
+                this.deleteFile(release);
+            }
+
             await this.releasesStorage.clear();
             return {
                 response: 1
             };
         } catch (e) {
             return e;
+        }
+    }
+
+    deleteFile(release: Release) {
+        const path = `files/releases`;
+        let filePath = `${path}/${release.fileName}.${release.extension}`;
+
+        if (existsSync(filePath)) {
+            unlinkSync(filePath);
         }
     }
 }

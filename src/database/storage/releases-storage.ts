@@ -37,7 +37,7 @@ export class ReleasesStorage extends BaseStorage<Release> {
     insert(release: Release): Promise<number> {
         return new Promise((resolve, reject) => {
             this.db.serialize(() => {
-                const values = this.db.prepare(`insert or replace into ${this.tableName}(productId, branchId, mandatory, changelog, enabled, fileName, date, versionCode, versionName, extension, originalName, fileSize, mimeType, encoding) values(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`);
+                const values = this.db.prepare(`insert or replace into ${this.tableName}(productId, branchId, mandatory, changelog, enabled, fileName, date, versionCode, versionName, extension, originalName, fileSize, mimeType, encoding, preRelease) values(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`);
                 values.run(
                     release.productId,
                     release.branchId,
@@ -52,7 +52,8 @@ export class ReleasesStorage extends BaseStorage<Release> {
                     release.originalName,
                     release.fileSize,
                     release.mimeType,
-                    release.encoding
+                    release.encoding,
+                    release.preRelease
                 );
                 values.finalize(error => {
                     if (error) reject(error);
@@ -65,7 +66,19 @@ export class ReleasesStorage extends BaseStorage<Release> {
     update(release: Release): Promise<any> {
         return new Promise((resolve, reject) => {
             this.db.serialize(() => {
-                const sql = `update ${this.tableName} set versionName = (?), versionCode = (?), mandatory = (?), changelog = (?), enabled = (?), extension = (?), originalName = (?), fileSize = (?), mimeType = (?), encoding = (?), fileName = (?) where id = (?)`;
+                const sql = `update ${this.tableName} set versionName = (?),
+                    versionCode = (?),
+                    mandatory = (?), 
+                    changelog = (?), 
+                    enabled = (?), 
+                    extension = (?), 
+                    originalName = (?), 
+                    fileSize = (?), 
+                    mimeType = (?), 
+                    encoding = (?), 
+                    fileName = (?),
+                    preRelease = (?)
+                    where id = (?)`;
                 this.db.run(
                     sql,
                     [
@@ -80,6 +93,7 @@ export class ReleasesStorage extends BaseStorage<Release> {
                         release.mimeType,
                         release.encoding,
                         release.fileName,
+                        release.preRelease,
                         release.id
                     ],
                     (error) => {

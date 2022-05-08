@@ -14,6 +14,7 @@ export class Release {
     fileSize: number;
     mimeType: string;
     encoding: string;
+    preRelease: number;
 }
 
 export class ReleaseEdit {
@@ -22,6 +23,7 @@ export class ReleaseEdit {
     mandatory: number;
     changelog?: string;
     enabled: number;
+    preRelease: number;
 
     applyToRelease(release: Release) {
         release.versionName = this.versionName;
@@ -29,6 +31,7 @@ export class ReleaseEdit {
         release.mandatory = this.mandatory;
         release.changelog = this.changelog;
         release.enabled = this.enabled;
+        release.preRelease = this.preRelease;
     }
 }
 
@@ -39,6 +42,7 @@ export class ReleaseAdd {
     branchId: number;
     mandatory: number;
     changelog?: string;
+    preRelease: number;
 
     mapToRelease(): Release {
         const release = new Release();
@@ -48,6 +52,7 @@ export class ReleaseAdd {
         release.branchId = this.branchId;
         release.mandatory = this.mandatory;
         release.changelog = this.changelog;
+        release.preRelease = this.preRelease;
 
         return release;
     }
