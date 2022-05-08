@@ -1,9 +1,10 @@
-import {Body, Delete, Get, JsonController, Param, Post, Res, UploadedFile} from 'routing-controllers';
+import {Body, Delete, Get, JsonController, Param, Patch, Post, Res, UploadedFile} from 'routing-controllers';
 import 'reflect-metadata';
-import {Release} from '../model/db-models';
 import {appDatabase} from '../database/database';
 import {ReleasesStorage} from '../database/storage/releases-storage';
-import {createWriteStream} from 'fs';
+import {createWriteStream, existsSync, renameSync, unlinkSync} from 'fs';
+import md5File from 'md5-file';
+import {ReleaseAdd, ReleaseEdit} from '../model/releases';
 
 @JsonController('/releases')
 export class ReleasesController {
@@ -63,18 +64,105 @@ export class ReleasesController {
     }
 
     @Post('/')
-    async addRelease(@Body() release: Release, @UploadedFile('file') file: any) {
+    async addRelease(@Body() body: ReleaseAdd, @UploadedFile('file') file: any, @Res() res) {
         try {
-            const mappedFile = UploadedFileExpress.map(file);
-
+            const release = body.mapToRelease();
             release.date = new Date().getTime();
-            release.fileName = mappedFile.originalName;
 
-            await this.releasesStorage.store(release);
-            createWriteStream(`files/releases/${file.originalname}`).write(mappedFile.buffer);
+            const mappedFile = UploadedFileExpress.map(file);
+            const lastDotIndex = mappedFile.originalName.lastIndexOf('.');
+            const extension =
+                lastDotIndex == -1 ? ''
+                    : mappedFile.originalName.substring(lastDotIndex + 1);
+
+            release.extension = extension;
+            release.originalName = mappedFile.originalName;
+            release.fileSize = mappedFile.size;
+            release.mimeType = mappedFile.mimeType;
+            release.encoding = mappedFile.encoding;
+
+            const path = `files/releases`;
+            const filePath = `${path}/${mappedFile.originalName}`;
+
+            createWriteStream(filePath).write(mappedFile.buffer, (error => {
+                if (error) throw error;
+                else {
+                    md5File(filePath).then(async (hash) => {
+                        renameSync(filePath, `${path}/${hash}.${extension}`);
+                        release.fileName = hash;
+                        await this.releasesStorage.insert(release);
+                    });
+                }
+            }));
+
             return {
                 response: 1
             };
+        } catch (e) {
+            return e;
+        }
+    }
+
+    @Patch('/:id')
+    async editReleaseById(
+        @Param('id') id: number,
+        @Body() body: ReleaseEdit,
+        @UploadedFile('file') file: any,
+        @Res() res
+    ) {
+        try {
+            const release = await this.releasesStorage.getById(id);
+            if (release == null) {
+                return {
+                    error: 'Release not found'
+                };
+            }
+
+            body.applyToRelease(release);
+
+            const path = `files/releases`;
+            let filePath = `${path}/${release.fileName}.${release.extension}`;
+
+            if (existsSync(filePath)) {
+                unlinkSync(filePath);
+            }
+
+            if (file == null) {
+                await this.releasesStorage.update(release);
+                return {
+                    response: 1
+                };
+            } else {
+                const mappedFile = UploadedFileExpress.map(file);
+                const lastDotIndex = mappedFile.originalName.lastIndexOf('.');
+                const extension =
+                    lastDotIndex == -1 ? ''
+                        : mappedFile.originalName.substring(lastDotIndex + 1);
+
+                release.extension = extension;
+                release.originalName = mappedFile.originalName;
+                release.fileSize = mappedFile.size;
+                release.mimeType = mappedFile.mimeType;
+                release.encoding = mappedFile.encoding;
+
+                filePath = `${path}/${mappedFile.originalName}`;
+
+                const writeStream = createWriteStream(filePath);
+                writeStream.write(mappedFile.buffer, (error => {
+                    if (error) throw error;
+                    else {
+                        md5File(filePath).then(async (hash) => {
+                            renameSync(filePath, `${path}/${hash}.${extension}`);
+                            release.fileName = hash;
+                            await this.releasesStorage.update(release);
+                        });
+                    }
+                }));
+
+                return {
+                    response: 1
+                };
+            }
         } catch (e) {
             return e;
         }

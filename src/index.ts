@@ -36,13 +36,14 @@ useExpressServer(app, {
     defaultErrorHandler: false
 });
 
-// app.get('/releases/download/:fileName', (req, res, next) => {
-//     const fileName = req.params.fileName;
-//     res.download(`files/releases/${fileName}`, (err) => {
-//         console.error(err);
-//     });
-//     next();
-// });
+app.get('/releases/download/:fileName', (req, res, next) => {
+    const fileName = req.params.fileName;
+
+    res.download(`files/releases/${fileName}`, (err) => {
+        console.error(err);
+    });
+    next();
+});
 
 app.use((req, res) => {
     httpContext.ns.bindEmitter(req);

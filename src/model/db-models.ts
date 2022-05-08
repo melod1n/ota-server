@@ -9,19 +9,8 @@ class Branch {
     name: string;
 }
 
-class Release {
-    id: number;
-    versionName: string;
-    versionCode: number;
-    productId: number;
-    branchId: number;
-    mandatory: number;
-    changelog?: string;
-    enabled: number;
-    fileName?: string;
-    date: number;
-}
+
 
 export {
-    Product, Branch, Release
+    Product, Branch
 };
