@@ -1,18 +1,18 @@
-import SQLite from 'sqlite3';
+import SQLite from "sqlite3";
 
 export abstract class BaseStorage<T> {
 
-    abstract tableName: string;
+	abstract tableName: string;
 
-    protected db: SQLite.Database;
+	protected db: SQLite.Database;
 
-    constructor(db: SQLite.Database) {
-        this.db = db;
-    }
+	constructor(db: SQLite.Database) {
+		this.db = db;
+	}
 
-    abstract getAll(): Promise<T[]>;
+	abstract getAll(): Promise<T[]>;
 
-    abstract clear(): Promise<any>;
+	abstract clear(): Promise<never>;
 
 
 }

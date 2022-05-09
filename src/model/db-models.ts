@@ -1,16 +1,15 @@
 class Product {
-    id: number;
-    name: string;
+	id: number;
+	name: string;
 }
 
 class Branch {
-    id: number;
-    productId: number;
-    name: string;
+	id: number;
+	productId: number;
+	name: string;
 }
 
 
-
 export {
-    Product, Branch
+	Product, Branch
 };
