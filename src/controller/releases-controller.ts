@@ -19,6 +19,7 @@ import {Release, ReleaseAdd, ReleaseEdit} from '../model/releases';
 import {otaSecretCode} from '../index';
 import {ArgumentNullError, EntityNotFoundError, IllegalSecretError, InternalError} from '../base/errors';
 import {OtaResponse} from '../base/response';
+import child_process from 'child_process';
 
 @JsonController()
 export class ReleasesController {
@@ -88,7 +89,9 @@ export class ReleasesController {
                 throw new EntityNotFoundError('Release');
             }
 
-            res.download(`files/releases/${release.fileName}.${release.extension}`, (error) => {
+            const filePath = `files/releases/${release.fileName}.${release.extension}`;
+
+            res.download(filePath, (error) => {
                 if (error) {
                     console.error(error);
 
@@ -150,6 +153,12 @@ export class ReleasesController {
             release.fileName = hash;
 
             await this.releasesStorage.insert(release);
+
+            child_process.exec(`start cmd /k appcenter distribute release --group "Collaborators, Alpha Testers" --file "${path}/${hash}.${extension}" --release-notes "${release.changelog}" --app "melod1n/Fast-VK" --token ${process.env['APP_CENTER_TOKEN']} --quiet ${release.mandatory == 1 ? '--mandatory' : ''}`, function (error) {
+                if (error) {
+                    console.error(error);
+                }
+            });
 
             return OtaResponse.success();
         } catch (e) {
