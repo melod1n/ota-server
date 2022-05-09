@@ -88,7 +88,7 @@ export class ReleasesController {
                 throw new EntityNotFoundError('Release');
             }
 
-            res.download(`files/releases/${release.fileName}`, (error) => {
+            res.download(`files/releases/${release.fileName}.${release.extension}`, (error) => {
                 if (error) {
                     console.error(error);
 
