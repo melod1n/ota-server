@@ -6,12 +6,11 @@ export enum ErrorCodes {
     IllegalSecret = 16
 }
 
-export class OtaError extends Error {
+export class OtaError {
     code?: number;
     message: string;
 
     constructor(code?: number, message?: string) {
-        super(message);
         this.code = code;
         this.message = message;
     }
@@ -31,14 +30,14 @@ export class InternalError extends OtaError {
 
 export class ArgumentNullError extends OtaError {
     constructor(argumentName: string) {
-        super(ErrorCodes.ArgumentNull, `argument ${argumentName} is null`);
+        super(ErrorCodes.ArgumentNull, `Argument is null: ${argumentName}`);
     }
 
 }
 
 export class EntityNotFoundError extends OtaError {
     constructor(entityName: string) {
-        super(ErrorCodes.EntityNotFound, `${entityName} not found`);
+        super(ErrorCodes.EntityNotFound, `Entity not found: ${entityName}`);
     }
 }
 

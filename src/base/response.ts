@@ -4,7 +4,7 @@ export class OtaResponse<T> {
     response?: T | any;
     error?: OtaError;
 
-    constructor(response?: T | any, error?: Error) {
+    constructor(response?: T | any, error?: OtaError) {
         this.response = response;
         this.error = error;
     }
@@ -14,11 +14,7 @@ export class OtaResponse<T> {
         return new OtaResponse<T>(response);
     }
 
-    static error(error: Error): OtaResponse<any> {
+    static error(error: OtaError): OtaResponse<any> {
         return new OtaResponse<any>(null, error);
-    }
-
-    static errorText(code?: number, text?: string): OtaResponse<any> {
-        return new OtaResponse<any>(null, new OtaError(-1, text));
     }
 }
