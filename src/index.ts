@@ -24,6 +24,7 @@ const logger = log4js.getLogger();
 logger.level = 'ALL';
 
 export const port = 5678;
+export let otaSecretCode = process.env['SECRET_CODE'];
 
 export const app: Express = express();
 app.use(bodyParser.json());

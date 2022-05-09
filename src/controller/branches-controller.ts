@@ -1,9 +1,12 @@
-import {Body, Delete, Get, JsonController, Param, Patch, Post} from 'routing-controllers';
+import {Body, Delete, Get, JsonController, Param, Patch, Post, QueryParam} from 'routing-controllers';
 import 'reflect-metadata';
 import {Branch} from '../model/db-models';
 import {appDatabase} from '../database/database';
 import {BranchesStorage} from '../database/storage/branches-storage';
 import {BaseController} from './base-controller';
+import {otaSecretCode} from '../index';
+import {IllegalSecretError} from '../errors';
+import {OtaResponse} from '../response';
 
 @JsonController('/branches')
 export class BranchesController extends BaseController {
@@ -11,71 +14,77 @@ export class BranchesController extends BaseController {
     private branchesStorage = new BranchesStorage(appDatabase);
 
     @Get('/')
-    async getBranches() {
+    async getBranches(@QueryParam('secretCode') secretCode: string) {
         try {
-            let products = await this.branchesStorage.getAll();
-            return {
-                response: {
-                    branches: products
-                }
-            };
+            this.checkSecretValidity(secretCode);
+            let branches = await this.branchesStorage.getAll();
+
+            return OtaResponse.success({branches: branches});
         } catch (e) {
-            return e;
+            return OtaResponse.error(e);
         }
     }
 
     @Post('/')
-    async addBranch(@Body() branch: Branch) {
+    async addBranch(@Body() branch: Branch, @QueryParam('secretCode') secretCode: string) {
         try {
+            this.checkSecretValidity(secretCode);
             await this.branchesStorage.insert(branch.productId, branch.name);
-            return {
-                response: 1
-            };
+
+            return OtaResponse.success();
         } catch (e) {
-            return e;
+            return OtaResponse.error(e);
         }
     }
 
     @Patch('/:id')
-    async updateBranch(@Param('id') id: number, @Body() body: any) {
+    async updateBranch(
+        @Param('id') id: number,
+        @Body() body: any,
+        @QueryParam('secretCode') secretCode: string
+    ) {
         try {
+            this.checkSecretValidity(secretCode);
             const branch = await this.branchesStorage.getById(id);
             if (branch == null) {
-                return {
-                    error: 'Branch not found'
-                };
+                return OtaResponse.errorText(-1, 'Branch not found');
             }
 
             await this.branchesStorage.update(id, body.name);
-            return {
-                response: 1
-            };
+
+            return OtaResponse.success();
         } catch (e) {
-            return e;
+            return OtaResponse.error(e);
         }
     }
 
     @Delete('/:id')
-    async deleteBranch(@Param('id') id: number) {
+    async deleteBranch(@Param('id') id: number, @QueryParam('secretCode') secretCode: string) {
         try {
+            this.checkSecretValidity(secretCode);
             await this.branchesStorage.delete(id);
-            return {
-                response: 1
-            };
+
+            return OtaResponse.success();
         } catch (e) {
-            return e;
+            return OtaResponse.error(e);
         }
     }
 
     @Delete('/')
-    async clearBranches() {
+    async clearBranches(@QueryParam('secretCode') secretCode: string) {
         try {
+            this.checkSecretValidity(secretCode);
             await this.branchesStorage.clear();
-            return {
-                response: 1
-            };
+
+            return OtaResponse.success();
         } catch (e) {
-            return e;
+            return OtaResponse.error(e);
+        }
+    }
+
+    checkSecretValidity(secret: string) {
+        if (secret !== otaSecretCode) {
+            throw new IllegalSecretError();
         }
     }
 }

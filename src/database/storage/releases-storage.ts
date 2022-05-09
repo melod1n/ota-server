@@ -49,7 +49,7 @@ export class ReleasesStorage extends BaseStorage<Release> {
         });
     }
 
-    insert(release: Release): Promise<number> {
+    insert(release: Release): Promise<any> {
         return new Promise((resolve, reject) => {
             this.db.serialize(() => {
                 const values = this.db.prepare(`insert or replace into ${this.tableName}(productId, branchId, mandatory, changelog, enabled, fileName, date, versionCode, versionName, extension, originalName, fileSize, mimeType, encoding, preRelease) values(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`);
@@ -72,7 +72,7 @@ export class ReleasesStorage extends BaseStorage<Release> {
                 );
                 values.finalize(error => {
                     if (error) reject(error);
-                    else resolve(1);
+                    else resolve(null);
                 });
             });
         });

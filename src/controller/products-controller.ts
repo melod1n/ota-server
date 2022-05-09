@@ -1,80 +1,88 @@
-import {Body, Delete, Get, JsonController, Param, Patch, Post} from 'routing-controllers';
+import {Body, Delete, Get, JsonController, Param, Patch, Post, QueryParam} from 'routing-controllers';
 import 'reflect-metadata';
 import {Product} from '../model/db-models';
 import {ProductsStorage} from '../database/storage/products-storage';
 import {appDatabase} from '../database/database';
+import {BaseController} from './base-controller';
+import {otaSecretCode} from '../index';
+import {IllegalSecretError} from '../errors';
+import {OtaResponse} from '../response';
 
 @JsonController('/products')
-export class ProductsController {
+export class ProductsController extends BaseController {
 
     private productsStorage = new ProductsStorage(appDatabase);
 
     @Get('/')
-    async getProducts() {
+    async getProducts(@QueryParam('secretCode') secretCode: string) {
         try {
+            this.checkSecretValidity(secretCode);
             let products = await this.productsStorage.getAll();
-            return {
-                response: {
-                    products: products
-                }
-            };
+            return OtaResponse.success({products: products});
         } catch (e) {
-            return e;
+            return OtaResponse.error(e);
         }
     }
 
     @Post('/')
-    async addProduct(@Body() product: Product) {
+    async addProduct(@Body() product: Product, @QueryParam('secretCode') secretCode: string) {
         try {
+            this.checkSecretValidity(secretCode);
             await this.productsStorage.insert(product.name);
-            return {
-                response: 1
-            };
+            return OtaResponse.success();
         } catch (e) {
-            return e;
+            return OtaResponse.error(e);
         }
     }
 
     @Patch('/:id')
-    async updateProduct(@Param('id') id: number, @Body() body: any) {
+    async updateProduct(
+        @Param('id') id: number,
+        @Body() body: any,
+        @QueryParam('secretCode') secretCode: string
+    ) {
         try {
+            this.checkSecretValidity(secretCode);
             const product = await this.productsStorage.getById(id);
             if (product == null) {
-                return {
-                    error: 'Product not found'
-                };
+                return OtaResponse.errorText(-1, 'Product not found');
             }
 
             await this.productsStorage.update(id, body.name);
-            return {
-                response: 1
-            };
+
+            return OtaResponse.success();
         } catch (e) {
-            return e;
+            return OtaResponse.error(e);
         }
     }
 
     @Delete('/:name')
-    async deleteProduct(@Param('name') name: string) {
+    async deleteProduct(@Param('name') name: string, @QueryParam('secretCode') secretCode: string) {
         try {
+            this.checkSecretValidity(secretCode);
             await this.productsStorage.delete(name);
-            return {
-                response: 1
-            };
+
+            return OtaResponse.success();
         } catch (e) {
-            return e;
+            return OtaResponse.error(e);
         }
     }
 
     @Delete('/')
-    async clearProducts() {
+    async clearProducts(@QueryParam('secretCode') secretCode: string) {
         try {
+            this.checkSecretValidity(secretCode);
             await this.productsStorage.clear();
-            return {
-                response: 1
-            };
+
+            return OtaResponse.success();
         } catch (e) {
-            return e;
+            return OtaResponse.error(e);
+        }
+    }
+
+    checkSecretValidity(secret: string) {
+        if (secret !== otaSecretCode) {
+            throw new IllegalSecretError();
         }
     }
 }

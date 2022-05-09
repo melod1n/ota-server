@@ -13,9 +13,12 @@ import {
 import 'reflect-metadata';
 import {appDatabase} from '../database/database';
 import {ReleasesStorage} from '../database/storage/releases-storage';
-import {createWriteStream, existsSync, renameSync, unlinkSync} from 'fs';
+import {existsSync, renameSync, unlinkSync, writeFileSync} from 'fs';
 import md5File from 'md5-file';
 import {Release, ReleaseAdd, ReleaseEdit} from '../model/releases';
+import {otaSecretCode} from '../index';
+import {IllegalSecretError, OtaError} from '../errors';
+import {OtaResponse} from '../response';
 
 @JsonController()
 export class ReleasesController {
@@ -23,97 +26,94 @@ export class ReleasesController {
     private releasesStorage = new ReleasesStorage(appDatabase);
 
     @Get('/releases/')
-    async getReleases() {
+    async getReleases(@QueryParam('secretCode') secretCode: string) {
         try {
+            this.checkSecretValidity(secretCode);
             const releases = await this.releasesStorage.getAll();
-            return {
-                response: {
-                    releases: releases
-                }
-            };
+
+            return OtaResponse.success({releases: releases});
         } catch (e) {
-            return e;
+            return OtaResponse.error(e);
         }
     }
 
     @Get('/releases/:id')
-    async getReleaseById(@Param('id') id: number) {
+    async getReleaseById(@Param('id') id: number, @QueryParam('secretCode') secretCode: string) {
         try {
+            this.checkSecretValidity(secretCode);
             const release = await this.releasesStorage.getById(id);
 
-            return {
-                response: {
-                    release: release
-                }
-            };
+            return OtaResponse.success({release: release});
         } catch (e) {
-            return e;
+            return OtaResponse.error(e);
         }
     }
 
     @Get('/releases-latest')
     async getLatestRelease(
         @QueryParam('productId') productId: number,
-        @QueryParam('branchId') branchId: number
+        @QueryParam('branchId') branchId: number,
+        @QueryParam('secretCode') secretCode: string
     ) {
         try {
+            this.checkSecretValidity(secretCode);
             const releases = await this.releasesStorage.getByParams(
                 `productId = (?) and branchId = (?)`,
                 [productId, branchId]
             );
             if (releases.length == 0) {
-                return {
-                    response: null
-                };
+                return OtaResponse.success(null);
             }
 
             releases.sort((first, second) => {
                 return second.date - first.date;
             });
 
-            return {
-                response: {
-                    release: releases[0]
-                }
-            };
+            return OtaResponse.success({release: releases[0]});
         } catch (e) {
-            return e;
+            return OtaResponse.error(e);
         }
     }
 
     @Get('/releases/:id/download')
-    async downloadFile(@Param('id') id: number, @Res() res) {
+    async downloadFile(
+        @Param('id') id: number,
+        @Res() res,
+        @QueryParam('secretCode') secretCode: string
+    ) {
         try {
+            this.checkSecretValidity(secretCode);
             const release = await this.releasesStorage.getById(id);
             if (release == null) {
-                return {
-                    error: 'Release not found'
-                };
+                throw new OtaError(-1, 'Release not found');
             }
 
-            res.download(`files/releases/${release.fileName}`, (err) => {
-                if (err) {
-                    console.error(err);
-                    return {
-                        error: err
-                    };
+            res.download(`files/releases/${release.fileName}`, (error) => {
+                if (error) {
+                    console.error(error);
+
+                    throw new OtaError(-1, error);
                 }
             });
         } catch (e) {
-            return e;
+            return OtaResponse.error(e);
         }
     }
 
     @Post('/releases/')
-    async addRelease(@Body() body: ReleaseAdd, @UploadedFile('file') file: any, @Res() res) {
+    async addRelease(
+        @Body() body: ReleaseAdd,
+        @UploadedFile('file') file: any,
+        @Res() res,
+        @QueryParam('secretCode') secretCode: string
+    ) {
         try {
+            this.checkSecretValidity(secretCode);
             const release = body.mapToRelease();
             release.date = new Date().getTime();
 
             if (file == null) {
-                return {
-                    error: 'File cannot be null'
-                };
+                throw new OtaError(-1, 'File can\'t be null');
             }
 
             const path = `files/releases`;
@@ -141,22 +141,19 @@ export class ReleasesController {
                 unlinkSync(filePath);
             }
 
-            createWriteStream(filePath).write(mappedFile.buffer, (error => {
-                if (error) throw error;
-                else {
-                    md5File(filePath).then(async (hash) => {
-                        renameSync(filePath, `${path}/${hash}.${extension}`);
-                        release.fileName = hash;
-                        await this.releasesStorage.insert(release);
-                    });
-                }
-            }));
+            writeFileSync(filePath, mappedFile.buffer);
 
-            return {
-                response: 1
-            };
+            const hash = md5File.sync(filePath);
+
+            renameSync(filePath, `${path}/${hash}.${extension}`);
+
+            release.fileName = hash;
+
+            await this.releasesStorage.insert(release);
+
+            return OtaResponse.success();
         } catch (e) {
-            return e;
+            return OtaResponse.error(e);
         }
     }
 
@@ -165,14 +162,14 @@ export class ReleasesController {
         @Param('id') id: number,
         @Body() body: ReleaseEdit,
         @UploadedFile('file') file: any,
-        @Res() res
+        @Res() res,
+        @QueryParam('secretCode') secretCode: string
     ) {
         try {
+            this.checkSecretValidity(secretCode);
             const release = await this.releasesStorage.getById(id);
             if (release == null) {
-                return {
-                    error: 'Release not found'
-                };
+                return OtaResponse.errorText(-1, 'Release not found');
             }
 
             body.applyToRelease(release);
@@ -186,9 +183,7 @@ export class ReleasesController {
 
             if (file == null) {
                 await this.releasesStorage.update(release);
-                return {
-                    response: 1
-                };
+                return OtaResponse.success();
             } else {
                 const mappedFile = UploadedFileExpress.map(file);
                 const lastDotIndex = mappedFile.originalName.lastIndexOf('.');
@@ -204,61 +199,58 @@ export class ReleasesController {
 
                 filePath = `${path}/${mappedFile.originalName}`;
 
-                const writeStream = createWriteStream(filePath);
-                writeStream.write(mappedFile.buffer, (error => {
-                    if (error) throw error;
-                    else {
-                        md5File(filePath).then(async (hash) => {
-                            renameSync(filePath, `${path}/${hash}.${extension}`);
-                            release.fileName = hash;
-                            await this.releasesStorage.update(release);
-                        });
-                    }
-                }));
+                writeFileSync(filePath, mappedFile.buffer);
 
-                return {
-                    response: 1
-                };
+                const hash = md5File.sync(filePath);
+
+                renameSync(filePath, `${path}/${hash}.${extension}`);
+
+                release.fileName = hash;
+
+                await this.releasesStorage.update(release);
+
+                return OtaResponse.success();
             }
         } catch (e) {
-            return e;
+            return OtaResponse.error(e);
         }
     }
 
     @Delete('/releases/:id')
-    async deleteReleaseById(@Param('id') id: number) {
+    async deleteReleaseById(
+        @Param('id') id: number,
+        @QueryParam('secretCode') secretCode: string
+    ) {
         try {
+            this.checkSecretValidity(secretCode);
             const release = await this.releasesStorage.getById(id);
             if (release == null) {
-                return {
-                    error: 'Release not found'
-                };
+                return OtaResponse.errorText(-1, 'Release not found');
             }
 
             this.deleteFile(release);
             await this.releasesStorage.delete(id);
-            return {
-                response: 1
-            };
+
+            return OtaResponse.success();
         } catch (e) {
-            return e;
+            return OtaResponse.error(e);
         }
     }
 
     @Delete('/releases/')
-    async clearReleases() {
+    async clearReleases(@QueryParam('secretCode') secretCode: string) {
         try {
+            this.checkSecretValidity(secretCode);
             const releases = await this.releasesStorage.getAll();
             for (const release of releases) {
                 this.deleteFile(release);
             }
 
             await this.releasesStorage.clear();
-            return {
-                response: 1
-            };
+
+            return OtaResponse.success();
         } catch (e) {
-            return e;
+            return OtaResponse.error(e);
         }
     }
 
@@ -268,6 +260,12 @@ export class ReleasesController {
 
         if (existsSync(filePath)) {
             unlinkSync(filePath);
+        }
+    }
+
+    checkSecretValidity(secret: string) {
+        if (secret !== otaSecretCode) {
+            throw new IllegalSecretError();
         }
     }
 }
