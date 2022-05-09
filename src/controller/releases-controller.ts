@@ -152,13 +152,27 @@ export class ReleasesController {
 
             release.fileName = hash;
 
-            await this.releasesStorage.insert(release);
+            child_process.execSync(
+                `start cmd /C appcenter distribute release --group "Collaborators, Alpha Testers" --file "${path}/${hash}.${extension}" --release-notes "${release.changelog}" --app "melod1n/Fast-VK" --token ${process.env['APP_CENTER_TOKEN']} --quiet ${release.mandatory == 1 ? '--mandatory' : ''}`
+            );
 
-            child_process.exec(`start cmd /k appcenter distribute release --group "Collaborators, Alpha Testers" --file "${path}/${hash}.${extension}" --release-notes "${release.changelog}" --app "melod1n/Fast-VK" --token ${process.env['APP_CENTER_TOKEN']} --quiet ${release.mandatory == 1 ? '--mandatory' : ''}`, function (error) {
-                if (error) {
-                    console.error(error);
-                }
-            });
+            const urlToLoad = `https://api.appcenter.ms/v0.1/apps/melod1n/Fast-VK/releases`;
+
+            const headers = {'X-API-Token': process.env['APP_CENTER_TOKEN']};
+            const releases: any[] = await fetch(urlToLoad, {
+                headers: headers
+            }).then(res => res.json());
+
+            const firstRelease = releases[0];
+            const releaseId = firstRelease.id;
+
+            const jsonRelease: any = await fetch(`${urlToLoad}/${releaseId}`, {
+                headers: headers
+            }).then(res => res.json());
+
+            release.downloadLink = jsonRelease.download_url;
+
+            await this.releasesStorage.insert(release);
 
             return OtaResponse.success();
         } catch (e) {

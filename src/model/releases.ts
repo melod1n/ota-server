@@ -15,6 +15,7 @@ export class Release {
     mimeType: string;
     encoding: string;
     preRelease: number;
+    downloadLink: string;
 }
 
 export class ReleaseEdit {

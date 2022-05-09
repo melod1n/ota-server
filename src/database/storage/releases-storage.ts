@@ -52,7 +52,7 @@ export class ReleasesStorage extends BaseStorage<Release> {
     insert(release: Release): Promise<any> {
         return new Promise((resolve, reject) => {
             this.db.serialize(() => {
-                const values = this.db.prepare(`insert or replace into ${this.tableName}(productId, branchId, mandatory, changelog, enabled, fileName, date, versionCode, versionName, extension, originalName, fileSize, mimeType, encoding, preRelease) values(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`);
+                const values = this.db.prepare(`insert or replace into ${this.tableName}(productId, branchId, mandatory, changelog, enabled, fileName, date, versionCode, versionName, extension, originalName, fileSize, mimeType, encoding, preRelease, downloadLink) values(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`);
                 values.run(
                     release.productId,
                     release.branchId,
@@ -68,7 +68,8 @@ export class ReleasesStorage extends BaseStorage<Release> {
                     release.fileSize,
                     release.mimeType,
                     release.encoding,
-                    release.preRelease
+                    release.preRelease,
+                    release.downloadLink
                 );
                 values.finalize(error => {
                     if (error) reject(error);
