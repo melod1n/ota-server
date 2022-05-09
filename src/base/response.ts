@@ -4,7 +4,7 @@ export class OtaResponse<T> {
     response?: T | any;
     error?: OtaError;
 
-    constructor(response?: T | any, error?: OtaError) {
+    constructor(response?: T | any, error?: Error) {
         this.response = response;
         this.error = error;
     }

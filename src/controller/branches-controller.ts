@@ -5,8 +5,8 @@ import {appDatabase} from '../database/database';
 import {BranchesStorage} from '../database/storage/branches-storage';
 import {BaseController} from './base-controller';
 import {otaSecretCode} from '../index';
-import {IllegalSecretError} from '../errors';
-import {OtaResponse} from '../response';
+import {EntityNotFoundError, IllegalSecretError} from '../base/errors';
+import {OtaResponse} from '../base/response';
 
 @JsonController('/branches')
 export class BranchesController extends BaseController {
@@ -47,7 +47,7 @@ export class BranchesController extends BaseController {
             this.checkSecretValidity(secretCode);
             const branch = await this.branchesStorage.getById(id);
             if (branch == null) {
-                return OtaResponse.errorText(-1, 'Branch not found');
+                throw new EntityNotFoundError('Branch');
             }
 
             await this.branchesStorage.update(id, body.name);

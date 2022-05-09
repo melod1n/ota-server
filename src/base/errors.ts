@@ -1,3 +1,11 @@
+export enum ErrorCodes {
+    UnknownError = -1,
+    InternalError = 1,
+    ArgumentNull = 2,
+    EntityNotFound = 15,
+    IllegalSecret = 16
+}
+
 export class OtaError extends Error {
     code?: number;
     message: string;
@@ -9,7 +17,33 @@ export class OtaError extends Error {
     }
 }
 
-export class IllegalSecretError {
-    code = 228;
-    message = 'secretCode is invalid';
+export class UnknownError extends OtaError {
+    constructor() {
+        super(ErrorCodes.UnknownError, 'Unknown error occurred');
+    }
+}
+
+export class InternalError extends OtaError {
+    constructor(trace: string) {
+        super(ErrorCodes.InternalError, `Internal error occurred: ${trace}`);
+    }
+}
+
+export class ArgumentNullError extends OtaError {
+    constructor(argumentName: string) {
+        super(ErrorCodes.ArgumentNull, `argument ${argumentName} is null`);
+    }
+
+}
+
+export class EntityNotFoundError extends OtaError {
+    constructor(entityName: string) {
+        super(ErrorCodes.EntityNotFound, `${entityName} not found`);
+    }
+}
+
+export class IllegalSecretError extends OtaError {
+    constructor() {
+        super(ErrorCodes.IllegalSecret, 'secretCode is invalid');
+    }
 }

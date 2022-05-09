@@ -5,8 +5,8 @@ import {ProductsStorage} from '../database/storage/products-storage';
 import {appDatabase} from '../database/database';
 import {BaseController} from './base-controller';
 import {otaSecretCode} from '../index';
-import {IllegalSecretError} from '../errors';
-import {OtaResponse} from '../response';
+import {EntityNotFoundError, IllegalSecretError} from '../base/errors';
+import {OtaResponse} from '../base/response';
 
 @JsonController('/products')
 export class ProductsController extends BaseController {
@@ -45,7 +45,7 @@ export class ProductsController extends BaseController {
             this.checkSecretValidity(secretCode);
             const product = await this.productsStorage.getById(id);
             if (product == null) {
-                return OtaResponse.errorText(-1, 'Product not found');
+                throw new EntityNotFoundError('Product');
             }
 
             await this.productsStorage.update(id, body.name);

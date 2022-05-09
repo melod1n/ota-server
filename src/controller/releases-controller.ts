@@ -17,8 +17,8 @@ import {existsSync, renameSync, unlinkSync, writeFileSync} from 'fs';
 import md5File from 'md5-file';
 import {Release, ReleaseAdd, ReleaseEdit} from '../model/releases';
 import {otaSecretCode} from '../index';
-import {IllegalSecretError, OtaError} from '../errors';
-import {OtaResponse} from '../response';
+import {ArgumentNullError, EntityNotFoundError, IllegalSecretError, InternalError} from '../base/errors';
+import {OtaResponse} from '../base/response';
 
 @JsonController()
 export class ReleasesController {
@@ -85,14 +85,14 @@ export class ReleasesController {
             this.checkSecretValidity(secretCode);
             const release = await this.releasesStorage.getById(id);
             if (release == null) {
-                throw new OtaError(-1, 'Release not found');
+                throw new EntityNotFoundError('Release');
             }
 
             res.download(`files/releases/${release.fileName}`, (error) => {
                 if (error) {
                     console.error(error);
 
-                    throw new OtaError(-1, error);
+                    throw new InternalError(error);
                 }
             });
         } catch (e) {
@@ -113,7 +113,7 @@ export class ReleasesController {
             release.date = new Date().getTime();
 
             if (file == null) {
-                throw new OtaError(-1, 'File can\'t be null');
+                throw new ArgumentNullError('file');
             }
 
             const path = `files/releases`;
@@ -169,7 +169,7 @@ export class ReleasesController {
             this.checkSecretValidity(secretCode);
             const release = await this.releasesStorage.getById(id);
             if (release == null) {
-                return OtaResponse.errorText(-1, 'Release not found');
+                throw new EntityNotFoundError('Release');
             }
 
             body.applyToRelease(release);
@@ -225,7 +225,7 @@ export class ReleasesController {
             this.checkSecretValidity(secretCode);
             const release = await this.releasesStorage.getById(id);
             if (release == null) {
-                return OtaResponse.errorText(-1, 'Release not found');
+                throw new EntityNotFoundError('Release');
             }
 
             this.deleteFile(release);
