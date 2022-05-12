@@ -2,7 +2,7 @@ import {
 	Body,
 	Delete,
 	Get,
-	HeaderParam,
+	HeaderParam, HeaderParams,
 	JsonController,
 	Param,
 	Patch,
@@ -54,7 +54,7 @@ export class ReleasesController {
 	async getLatestRelease(
 		@QueryParam("productId") productId: number,
 		@QueryParam("branchId") branchId: number,
-		@QueryParam("secretCode") secretCode: string
+		@HeaderParam("secretCode") secretCode: string
 	) {
 		try {
 			this.checkSecretValidity(secretCode);
@@ -108,7 +108,7 @@ export class ReleasesController {
 		@Body() body: ReleaseAdd,
 		@UploadedFile("file") file: any,
 		@Res() res,
-		@QueryParam("secretCode") secretCode: string
+		@HeaderParam("secretCode") secretCode: string
 	) {
 		try {
 			this.checkSecretValidity(secretCode);
@@ -168,7 +168,7 @@ export class ReleasesController {
 		@Body() body: ReleaseEdit,
 		@UploadedFile("file") file: any,
 		@Res() res,
-		@QueryParam("secretCode") secretCode: string
+		@HeaderParam("secretCode") secretCode: string
 	) {
 		try {
 			this.checkSecretValidity(secretCode);
@@ -226,7 +226,7 @@ export class ReleasesController {
 	@Delete("/releases/:id")
 	async deleteReleaseById(
 		@Param("id") id: number,
-		@QueryParam("secretCode") secretCode: string
+		@HeaderParam("secretCode") secretCode: string
 	) {
 		try {
 			this.checkSecretValidity(secretCode);
@@ -245,7 +245,7 @@ export class ReleasesController {
 	}
 
 	@Delete("/releases/")
-	async clearReleases(@QueryParam("secretCode") secretCode: string) {
+	async clearReleases(@HeaderParam("secretCode") secretCode: string) {
 		try {
 			this.checkSecretValidity(secretCode);
 			const releases = await this.releasesStorage.getAll();
