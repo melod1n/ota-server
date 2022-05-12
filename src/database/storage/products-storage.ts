@@ -1,5 +1,5 @@
-import {Product} from "../../model/db-models";
 import {BaseStorage} from "./base-storage";
+import {Product} from "../../model/products";
 
 export class ProductsStorage extends BaseStorage<Product> {
 

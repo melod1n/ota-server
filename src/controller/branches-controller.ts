@@ -1,12 +1,12 @@
 import {Body, Delete, Get, HeaderParam, JsonController, Param, Patch, Post} from "routing-controllers";
 import "reflect-metadata";
-import {Branch} from "../model/db-models";
 import {appDatabase} from "../database/database";
 import {BranchesStorage} from "../database/storage/branches-storage";
 import {BaseController} from "./base-controller";
 import {otaSecretCode} from "../index";
 import {EntityNotFoundError, IllegalSecretError} from "../base/errors";
 import {OtaResponse} from "../base/response";
+import {BranchAdd, BranchUpdate} from "../model/branches";
 
 @JsonController("/branches")
 export class BranchesController extends BaseController {
@@ -26,7 +26,10 @@ export class BranchesController extends BaseController {
 	}
 
 	@Post("/")
-	async addBranch(@Body() branch: Branch, @HeaderParam("Secret-Code") secretCode: string) {
+	async addBranch(
+		@Body() branch: BranchAdd,
+		@HeaderParam("Secret-Code") secretCode: string
+	) {
 		try {
 			this.checkSecretValidity(secretCode);
 			await this.branchesStorage.insert(branch.productId, branch.name);
@@ -40,7 +43,7 @@ export class BranchesController extends BaseController {
 	@Patch("/:id")
 	async updateBranch(
 		@Param("id") id: number,
-		@Body() body: any,
+		@Body() body: BranchUpdate,
 		@HeaderParam("Secret-Code") secretCode: string
 	) {
 		try {
@@ -59,7 +62,10 @@ export class BranchesController extends BaseController {
 	}
 
 	@Delete("/:id")
-	async deleteBranch(@Param("id") id: number, @HeaderParam("Secret-Code") secretCode: string) {
+	async deleteBranch(
+		@Param("id") id: number,
+		@HeaderParam("Secret-Code") secretCode: string
+	) {
 		try {
 			this.checkSecretValidity(secretCode);
 			await this.branchesStorage.delete(id);
@@ -71,7 +77,9 @@ export class BranchesController extends BaseController {
 	}
 
 	@Delete("/")
-	async clearBranches(@HeaderParam("Secret-Code") secretCode: string) {
+	async clearBranches(
+		@HeaderParam("Secret-Code") secretCode: string
+	) {
 		try {
 			this.checkSecretValidity(secretCode);
 			await this.branchesStorage.clear();

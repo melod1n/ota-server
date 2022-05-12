@@ -1,18 +1,10 @@
+/* eslint-disable @typescript-eslint/no-explicit-any,@typescript-eslint/no-unused-vars */
 import {ExpressErrorMiddlewareInterface, Middleware} from "routing-controllers";
+import {OtaResponse} from "../base/response";
 
 @Middleware({type: "after"})
 export class GlobalErrorHandler implements ExpressErrorMiddlewareInterface {
-	// eslint-disable-next-line @typescript-eslint/no-empty-function,@typescript-eslint/no-unused-vars
-	error(error: never, request: never, response: never, next: (err?: never) => unknown): void {
+	error(error: any, request: any, response: any, next: (err?: any) => any) {
+		return OtaResponse.error(error);
 	}
-
-	// error(error: Error, request?: any, response?: any) {
-	// 	// response.send({error: error});
-	// 	return {error: error};
-	// }
-}
-
-export class Error {
-	code: number;
-	message?: string;
 }

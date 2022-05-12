@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import {
 	Body,
 	Delete,
@@ -57,7 +58,7 @@ export class ReleasesController {
 		@HeaderParam("Secret-Code") secretCode: string
 	) {
 		try {
-			// this.checkSecretValidity(secretCode);
+			this.checkSecretValidity(secretCode);
 			const releases = await this.releasesStorage.getByParams(
 				"productId = (?) and branchId = (?)",
 				[productId, branchId]

@@ -1,12 +1,12 @@
 import {Body, Delete, Get, HeaderParam, JsonController, Param, Patch, Post} from "routing-controllers";
 import "reflect-metadata";
-import {Product} from "../model/db-models";
 import {ProductsStorage} from "../database/storage/products-storage";
 import {appDatabase} from "../database/database";
 import {BaseController} from "./base-controller";
 import {otaSecretCode} from "../index";
 import {EntityNotFoundError, IllegalSecretError} from "../base/errors";
 import {OtaResponse} from "../base/response";
+import {ProductAdd, ProductEdit} from "../model/products";
 
 @JsonController("/products")
 export class ProductsController extends BaseController {
@@ -25,7 +25,10 @@ export class ProductsController extends BaseController {
 	}
 
 	@Post("/")
-	async addProduct(@Body() product: Product, @HeaderParam("Secret-Code") secretCode: string) {
+	async addProduct(
+		@Body() product: ProductAdd,
+		@HeaderParam("Secret-Code") secretCode: string
+	) {
 		try {
 			this.checkSecretValidity(secretCode);
 			await this.productsStorage.insert(product.name);
@@ -38,7 +41,7 @@ export class ProductsController extends BaseController {
 	@Patch("/:id")
 	async updateProduct(
 		@Param("id") id: number,
-		@Body() body: any,
+		@Body() body: ProductEdit,
 		@HeaderParam("Secret-Code") secretCode: string
 	) {
 		try {
@@ -57,7 +60,10 @@ export class ProductsController extends BaseController {
 	}
 
 	@Delete("/:name")
-	async deleteProduct(@Param("name") name: string, @HeaderParam("Secret-Code") secretCode: string) {
+	async deleteProduct(
+		@Param("name") name: string,
+		@HeaderParam("Secret-Code") secretCode: string
+	) {
 		try {
 			this.checkSecretValidity(secretCode);
 			await this.productsStorage.delete(name);

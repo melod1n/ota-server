@@ -1,5 +1,5 @@
 import {BaseStorage} from "./base-storage";
-import {Branch} from "../../model/db-models";
+import {Branch} from "../../model/branches";
 
 export class BranchesStorage extends BaseStorage<Branch> {
 
