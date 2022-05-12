@@ -14,7 +14,7 @@ export class ProductsController extends BaseController {
 	private productsStorage = new ProductsStorage(appDatabase);
 
 	@Get("/")
-	async getProducts(@HeaderParam("secretCode") secretCode: string) {
+	async getProducts(@HeaderParam("Secret-Code") secretCode: string) {
 		try {
 			this.checkSecretValidity(secretCode);
 			const products = await this.productsStorage.getAll();
@@ -25,7 +25,7 @@ export class ProductsController extends BaseController {
 	}
 
 	@Post("/")
-	async addProduct(@Body() product: Product, @HeaderParam("secretCode") secretCode: string) {
+	async addProduct(@Body() product: Product, @HeaderParam("Secret-Code") secretCode: string) {
 		try {
 			this.checkSecretValidity(secretCode);
 			await this.productsStorage.insert(product.name);
@@ -39,7 +39,7 @@ export class ProductsController extends BaseController {
 	async updateProduct(
 		@Param("id") id: number,
 		@Body() body: any,
-		@HeaderParam("secretCode") secretCode: string
+		@HeaderParam("Secret-Code") secretCode: string
 	) {
 		try {
 			this.checkSecretValidity(secretCode);
@@ -57,7 +57,7 @@ export class ProductsController extends BaseController {
 	}
 
 	@Delete("/:name")
-	async deleteProduct(@Param("name") name: string, @HeaderParam("secretCode") secretCode: string) {
+	async deleteProduct(@Param("name") name: string, @HeaderParam("Secret-Code") secretCode: string) {
 		try {
 			this.checkSecretValidity(secretCode);
 			await this.productsStorage.delete(name);
@@ -69,7 +69,7 @@ export class ProductsController extends BaseController {
 	}
 
 	@Delete("/")
-	async clearProducts(@HeaderParam("secretCode") secretCode: string) {
+	async clearProducts(@HeaderParam("Secret-Code") secretCode: string) {
 		try {
 			this.checkSecretValidity(secretCode);
 			await this.productsStorage.clear();
