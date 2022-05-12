@@ -93,7 +93,8 @@ export class ReleasesStorage extends BaseStorage<Release> {
                     mimeType = (?), 
                     encoding = (?), 
                     fileName = (?),
-                    preRelease = (?)
+                    preRelease = (?),
+                    downloadLink = (?)
                     where id = (?)`;
 				this.db.run(
 					sql,
@@ -110,6 +111,7 @@ export class ReleasesStorage extends BaseStorage<Release> {
 						release.encoding,
 						release.fileName,
 						release.preRelease,
+						release.downloadLink,
 						release.id
 					],
 					(error) => {

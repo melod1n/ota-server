@@ -11,6 +11,7 @@ import {BranchesController} from "./controller/branches-controller";
 import {DatabaseManager} from "./database/database";
 import {ReleasesController} from "./controller/releases-controller";
 import {NgrokUrl} from "./ngrok-url";
+import path from "path";
 
 env.config();
 
@@ -23,13 +24,18 @@ export function setBaseUrl(url: string) {
 const logger = log4js.getLogger();
 logger.level = "ALL";
 
-export const port = 5678;
+export const port = Number.parseInt(process.env["PORT"]);
 export const otaSecretCode = process.env["SECRET_CODE"];
 
 export const app: Express = express();
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({extended: true}));
 app.use(httpContext.middleware);
+app.use("/static", express.static(path.join(process.cwd(), "files")));
+
+export function getReleaseDownloadLink(fileName: string): string {
+	return `${baseUrl}/static/releases/${fileName}`;
+}
 
 useExpressServer(app, {
 	controllers: [ProductsController, BranchesController, ReleasesController],
@@ -57,6 +63,7 @@ dbManager.initDatabase();
 app.listen(port, async () => {
 	console.log(`Running on port ${port}`);
 
-	await NgrokUrl.getNgrokUrl();
-	// NgrokUrl.init();
+	setTimeout(async () => {
+		await NgrokUrl.getNgrokUrl();
+	}, 5000);
 });

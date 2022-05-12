@@ -1,4 +1,4 @@
-import {Body, Delete, Get, JsonController, Param, Patch, Post, QueryParam} from "routing-controllers";
+import {Body, Delete, Get, HeaderParam, JsonController, Param, Patch, Post} from "routing-controllers";
 import "reflect-metadata";
 import {Branch} from "../model/db-models";
 import {appDatabase} from "../database/database";
@@ -14,7 +14,7 @@ export class BranchesController extends BaseController {
 	private branchesStorage = new BranchesStorage(appDatabase);
 
 	@Get("/")
-	async getBranches(@QueryParam("secretCode") secretCode: string) {
+	async getBranches(@HeaderParam("secretCode") secretCode: string) {
 		try {
 			this.checkSecretValidity(secretCode);
 			const branches = await this.branchesStorage.getAll();
@@ -26,7 +26,7 @@ export class BranchesController extends BaseController {
 	}
 
 	@Post("/")
-	async addBranch(@Body() branch: Branch, @QueryParam("secretCode") secretCode: string) {
+	async addBranch(@Body() branch: Branch, @HeaderParam("secretCode") secretCode: string) {
 		try {
 			this.checkSecretValidity(secretCode);
 			await this.branchesStorage.insert(branch.productId, branch.name);
@@ -41,7 +41,7 @@ export class BranchesController extends BaseController {
 	async updateBranch(
 		@Param("id") id: number,
 		@Body() body: any,
-		@QueryParam("secretCode") secretCode: string
+		@HeaderParam("secretCode") secretCode: string
 	) {
 		try {
 			this.checkSecretValidity(secretCode);
@@ -59,7 +59,7 @@ export class BranchesController extends BaseController {
 	}
 
 	@Delete("/:id")
-	async deleteBranch(@Param("id") id: number, @QueryParam("secretCode") secretCode: string) {
+	async deleteBranch(@Param("id") id: number, @HeaderParam("secretCode") secretCode: string) {
 		try {
 			this.checkSecretValidity(secretCode);
 			await this.branchesStorage.delete(id);
@@ -71,7 +71,7 @@ export class BranchesController extends BaseController {
 	}
 
 	@Delete("/")
-	async clearBranches(@QueryParam("secretCode") secretCode: string) {
+	async clearBranches(@HeaderParam("secretCode") secretCode: string) {
 		try {
 			this.checkSecretValidity(secretCode);
 			await this.branchesStorage.clear();

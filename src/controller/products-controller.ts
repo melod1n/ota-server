@@ -1,4 +1,4 @@
-import {Body, Delete, Get, JsonController, Param, Patch, Post, QueryParam} from "routing-controllers";
+import {Body, Delete, Get, HeaderParam, JsonController, Param, Patch, Post} from "routing-controllers";
 import "reflect-metadata";
 import {Product} from "../model/db-models";
 import {ProductsStorage} from "../database/storage/products-storage";
@@ -14,10 +14,10 @@ export class ProductsController extends BaseController {
 	private productsStorage = new ProductsStorage(appDatabase);
 
 	@Get("/")
-	async getProducts(@QueryParam("secretCode") secretCode: string) {
+	async getProducts(@HeaderParam("secretCode") secretCode: string) {
 		try {
 			this.checkSecretValidity(secretCode);
-			let products = await this.productsStorage.getAll();
+			const products = await this.productsStorage.getAll();
 			return OtaResponse.success({products: products});
 		} catch (e) {
 			return OtaResponse.error(e);
@@ -25,7 +25,7 @@ export class ProductsController extends BaseController {
 	}
 
 	@Post("/")
-	async addProduct(@Body() product: Product, @QueryParam("secretCode") secretCode: string) {
+	async addProduct(@Body() product: Product, @HeaderParam("secretCode") secretCode: string) {
 		try {
 			this.checkSecretValidity(secretCode);
 			await this.productsStorage.insert(product.name);
@@ -39,7 +39,7 @@ export class ProductsController extends BaseController {
 	async updateProduct(
 		@Param("id") id: number,
 		@Body() body: any,
-		@QueryParam("secretCode") secretCode: string
+		@HeaderParam("secretCode") secretCode: string
 	) {
 		try {
 			this.checkSecretValidity(secretCode);
@@ -57,7 +57,7 @@ export class ProductsController extends BaseController {
 	}
 
 	@Delete("/:name")
-	async deleteProduct(@Param("name") name: string, @QueryParam("secretCode") secretCode: string) {
+	async deleteProduct(@Param("name") name: string, @HeaderParam("secretCode") secretCode: string) {
 		try {
 			this.checkSecretValidity(secretCode);
 			await this.productsStorage.delete(name);
@@ -69,7 +69,7 @@ export class ProductsController extends BaseController {
 	}
 
 	@Delete("/")
-	async clearProducts(@QueryParam("secretCode") secretCode: string) {
+	async clearProducts(@HeaderParam("secretCode") secretCode: string) {
 		try {
 			this.checkSecretValidity(secretCode);
 			await this.productsStorage.clear();

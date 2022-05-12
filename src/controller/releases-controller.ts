@@ -2,6 +2,7 @@ import {
 	Body,
 	Delete,
 	Get,
+	HeaderParam,
 	JsonController,
 	Param,
 	Patch,
@@ -16,10 +17,9 @@ import {ReleasesStorage} from "../database/storage/releases-storage";
 import {existsSync, renameSync, unlinkSync, writeFileSync} from "fs";
 import md5File from "md5-file";
 import {Release, ReleaseAdd, ReleaseEdit} from "../model/releases";
-import {otaSecretCode} from "../index";
+import {getReleaseDownloadLink, otaSecretCode} from "../index";
 import {ArgumentNullError, EntityNotFoundError, IllegalSecretError, InternalError} from "../base/errors";
 import {OtaResponse} from "../base/response";
-import child_process from "child_process";
 
 @JsonController()
 export class ReleasesController {
@@ -27,7 +27,7 @@ export class ReleasesController {
 	private releasesStorage = new ReleasesStorage(appDatabase);
 
 	@Get("/releases/")
-	async getReleases(@QueryParam("secretCode") secretCode: string) {
+	async getReleases(@HeaderParam("Secret-Code") secretCode: string) {
 		try {
 			this.checkSecretValidity(secretCode);
 			const releases = await this.releasesStorage.getAll();
@@ -39,7 +39,7 @@ export class ReleasesController {
 	}
 
 	@Get("/releases/:id")
-	async getReleaseById(@Param("id") id: number, @QueryParam("secretCode") secretCode: string) {
+	async getReleaseById(@Param("id") id: number, @HeaderParam("secretCode") secretCode: string) {
 		try {
 			this.checkSecretValidity(secretCode);
 			const release = await this.releasesStorage.getById(id);
@@ -59,7 +59,7 @@ export class ReleasesController {
 		try {
 			this.checkSecretValidity(secretCode);
 			const releases = await this.releasesStorage.getByParams(
-				`productId = (?) and branchId = (?)`,
+				"productId = (?) and branchId = (?)",
 				[productId, branchId]
 			);
 			if (releases.length == 0) {
@@ -80,7 +80,7 @@ export class ReleasesController {
 	async downloadFile(
 		@Param("id") id: number,
 		@Res() res,
-		@QueryParam("secretCode") secretCode: string
+		@HeaderParam("secretCode") secretCode: string
 	) {
 		try {
 			this.checkSecretValidity(secretCode);
@@ -119,7 +119,7 @@ export class ReleasesController {
 				throw new ArgumentNullError("file");
 			}
 
-			const path = `files/releases`;
+			const path = "files/releases";
 			let filePath = `${path}/${release.fileName}.${release.extension}`;
 
 			if (existsSync(filePath)) {
@@ -147,30 +147,12 @@ export class ReleasesController {
 			writeFileSync(filePath, mappedFile.buffer);
 
 			const hash = md5File.sync(filePath);
+			const fullFileName = `${hash}.${extension}`;
 
-			renameSync(filePath, `${path}/${hash}.${extension}`);
+			renameSync(filePath, `${path}/${fullFileName}`);
 
 			release.fileName = hash;
-
-			child_process.execSync(
-				`start cmd /C appcenter distribute release --group "Collaborators, Alpha Testers" --file "${path}/${hash}.${extension}" --release-notes "${release.changelog}" --app "melod1n/Fast-VK" --token ${process.env["APP_CENTER_TOKEN"]} --quiet ${release.mandatory == 1 ? "--mandatory" : ""}`
-			);
-
-			const urlToLoad = `https://api.appcenter.ms/v0.1/apps/melod1n/Fast-VK/releases`;
-
-			const headers = {"X-API-Token": process.env["APP_CENTER_TOKEN"]};
-			const releases: any[] = await fetch(urlToLoad, {
-				headers: headers
-			}).then(res => res.json());
-
-			const firstRelease = releases[0];
-			const releaseId = firstRelease.id;
-
-			const jsonRelease: any = await fetch(`${urlToLoad}/${releaseId}`, {
-				headers: headers
-			}).then(res => res.json());
-
-			release.downloadLink = jsonRelease.download_url;
+			release.downloadLink = getReleaseDownloadLink(fullFileName);
 
 			await this.releasesStorage.insert(release);
 
@@ -197,7 +179,7 @@ export class ReleasesController {
 
 			body.applyToRelease(release);
 
-			const path = `files/releases`;
+			const path = "files/releases";
 			let filePath = `${path}/${release.fileName}.${release.extension}`;
 
 			if (existsSync(filePath)) {
@@ -225,10 +207,12 @@ export class ReleasesController {
 				writeFileSync(filePath, mappedFile.buffer);
 
 				const hash = md5File.sync(filePath);
+				const fullFileName = `${hash}.${extension}`;
 
-				renameSync(filePath, `${path}/${hash}.${extension}`);
+				renameSync(filePath, `${path}/${fullFileName}`);
 
 				release.fileName = hash;
+				release.downloadLink = getReleaseDownloadLink(fullFileName);
 
 				await this.releasesStorage.update(release);
 
@@ -278,8 +262,8 @@ export class ReleasesController {
 	}
 
 	deleteFile(release: Release) {
-		const path = `files/releases`;
-		let filePath = `${path}/${release.fileName}.${release.extension}`;
+		const path = "files/releases";
+		const filePath = `${path}/${release.fileName}.${release.extension}`;
 
 		if (existsSync(filePath)) {
 			unlinkSync(filePath);
