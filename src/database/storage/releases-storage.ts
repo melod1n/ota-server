@@ -79,6 +79,16 @@ export class ReleasesStorage extends BaseStorage<Release> {
 		});
 	}
 
+	updateAll(releases: Release[]): Promise<never> {
+		return new Promise((resolve, reject) => {
+			releases.forEach(async (release) => {
+				await this.update(release).catch(reject);
+			});
+
+			resolve(null);
+		});
+	}
+
 	update(release: Release): Promise<never> {
 		return new Promise((resolve, reject) => {
 			this.db.serialize(() => {

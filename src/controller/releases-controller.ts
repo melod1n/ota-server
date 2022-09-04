@@ -31,7 +31,9 @@ export class ReleasesController {
 	async getReleases(@HeaderParam("Secret-Code") secretCode: string) {
 		try {
 			this.checkSecretValidity(secretCode);
-			const releases = await this.releasesStorage.getAll();
+			let releases = await this.releasesStorage.getAll();
+
+			releases = releases.sort((a, b) => b.id-a.id);
 
 			return OtaResponse.success({releases: releases});
 		} catch (e) {

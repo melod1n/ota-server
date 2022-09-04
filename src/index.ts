@@ -10,8 +10,9 @@ import {GlobalErrorHandler} from "./middleware/global-error-handler";
 import {BranchesController} from "./controller/branches-controller";
 import {DatabaseManager} from "./database/database";
 import {ReleasesController} from "./controller/releases-controller";
-import {NgrokUrl} from "./ngrok-url";
 import path from "path";
+
+import {NgrokUrl} from "./ngrok-url";
 
 env.config();
 
