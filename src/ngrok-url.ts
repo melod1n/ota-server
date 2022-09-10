@@ -42,7 +42,7 @@ export class NgrokUrl {
 
 					await releasesStorage.updateAll(releases);
 
-					child_process.exec("commit_and_push_ngrok_url");
+					child_process.exec("start cmd /k commit_and_push_ngrok_url");
 					console.log(url);
 
 					resolve(url);
