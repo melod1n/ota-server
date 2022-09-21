@@ -8,11 +8,14 @@ import bodyParser from "body-parser";
 import httpContext from "express-http-context";
 import {GlobalErrorHandler} from "./middleware/global-error-handler";
 import {BranchesController} from "./controller/branches-controller";
-import {DatabaseManager} from "./database/database";
+import {appDatabase, DatabaseManager} from "./database/database";
 import {ReleasesController} from "./controller/releases-controller";
 import path from "path";
 
-import {NgrokUrl} from "./ngrok-url";
+import {ReleasesStorage} from "./database/storage/releases-storage";
+import {writeFile} from "fs/promises";
+import child_process from "child_process";
+import localtunnel from "localtunnel";
 
 env.config();
 
@@ -61,10 +64,30 @@ app.use((req, res) => {
 const dbManager = new DatabaseManager();
 dbManager.initDatabase();
 
+const releasesStorage = new ReleasesStorage(appDatabase);
+
 app.listen(port, async () => {
 	console.log(`Running on port ${port}`);
 
-	setTimeout(async () => {
-		await NgrokUrl.getNgrokUrl();
-	}, 5000);
+	const tunnel = await localtunnel({port: process.env["PORT"]});
+	tunnel.on("close", () => {
+		console.log("localtunnel closed port");
+	});
+
+	const url = tunnel.url;
+	console.log(url);
+	setBaseUrl(url);
+
+	await writeFile("ngrok_url.json", JSON.stringify({url: url}));
+
+	const releases = await releasesStorage.getAll();
+
+	for (let i = 0; i < releases.length; i++) {
+		const release = releases[i];
+		release.downloadLink = getReleaseDownloadLink(release.fileName);
+	}
+
+	await releasesStorage.updateAll(releases);
+
+	child_process.exec("start cmd /k commit_and_push_ngrok_url");
 });
